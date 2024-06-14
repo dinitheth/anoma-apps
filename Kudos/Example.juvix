@@ -19,5 +19,6 @@ originatorKeyPair : KeyPair := commitmentKeyPair;
 
 owner : Owner := mkOwner pubKey;
 
+--- Instantiate 10 Kudos of originator's kind that are assigned to an owner
 main : Transaction :=
   instantiate commitmentKeyPair owner originatorKeyPair 10;
