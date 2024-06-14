@@ -1,0 +1,50 @@
+module Kudos.Logic;
+
+import Anoma open;
+import Kudos.Types open;
+import Kudos.Extra open;
+import Stdlib.Prelude open;
+
+--- Check that the ;Transaction; is valid for the Kudo application.
+--- The self argument is the ;Resource; that defines this logic function.
+kudoLogic (self : Resource) (tx : Transaction) : Bool :=
+  let
+    rs := partitionResources tx;
+    isKudo (r : Resource) : Bool :=
+      anomaEncode (Resource.logic self)
+        == anomaEncode (Resource.logic r);
+    consumedKudo :=
+      filter isKudo (ResourcePartition.consumed rs);
+    createdKudo := filter isKudo (ResourcePartition.created rs);
+  in checkConsumedKudo consumedKudo
+    && checkCreatedKudo createdKudo
+    && checkAuthorizedConsumption consumedKudo tx;
+
+--- Run checks on consumed Kudo ;Resource;s
+checkConsumedKudo (rs : List Resource) : Bool :=
+  all (r in rs)
+    checkValidOriginator r;
+
+--- Run checks on created Kudo ;Resource;s
+checkCreatedKudo (rs : List Resource) : Bool :=
+  all (r in rs)
+    checkValidOriginator r;
+
+--- Check that the originator signed the ;Resource; kind.
+checkValidOriginator (r : Resource) : Bool :=
+  let
+    label : KudoLabel := anomaDecode (Resource.label r);
+    value : KudoValue := anomaDecode (Resource.data r);
+  in anomaVerifyDetached
+    (KudoValue.originatorSig value)
+    (anomaKind r)
+    (KudoLabel.originatorPublicKey label);
+
+--- Check that the owner has authorized consumption
+checkAuthorizedConsumption
+  (consumed : List Resource) (tx : Transaction) : Bool :=
+  all (r in consumed)
+    let
+      value : KudoValue := anomaDecode (Resource.data r);
+      ownerPubKey := Owner.ownerPubKey (KudoValue.owner value);
+    in verifyOwner ownerPubKey tx;

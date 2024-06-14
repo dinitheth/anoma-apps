@@ -1,0 +1,131 @@
+module Kudos.Instantiate;
+
+import Anoma open;
+import Kudos.Extra open;
+import Kudos.Logic open;
+import Kudos.Types open;
+import Stdlib.Prelude open;
+
+--- Instantiate a quantity of kudo assigned to a new owner
+instantiate
+  (commitmentKeyPair : KeyPair)
+  (kudoOwner : Owner)
+  (kudoOriginatorKeyPair : KeyPair)
+  (n : Nat)
+  : Transaction :=
+  let
+    commitmentPubKey := KeyPair.pubKey commitmentKeyPair;
+    commitmentPrivKey := KeyPair.privKey commitmentKeyPair;
+    originatorPrivKey := KeyPair.privKey kudoOriginatorKeyPair;
+    consumed :=
+      instantiateConsume
+        commitmentPubKey
+        kudoOriginatorKeyPair
+        n;
+    created :=
+      instantiateCreate
+        commitmentPubKey
+        kudoOwner
+        kudoOriginatorKeyPair
+        n;
+  in instantiateMkSignedTx
+    commitmentPrivKey
+    originatorPrivKey
+    consumed
+    created;
+
+--- Create a kudo ;Resource; for instantiation, labeled for the originator and produces the originator ;Signature;
+instantiateOriginatorKind
+  (commitmentPublicKey : PublicKey)
+  (kudoOriginatorKeyPair : KeyPair)
+  (n : Nat)
+  : Resource × Signature :=
+  let
+    origPubKey := KeyPair.pubKey kudoOriginatorKeyPair;
+    resLabel :=
+      mkKudoLabel@{
+        originatorPublicKey := origPubKey
+      };
+    res :=
+      Resource.mk@{
+        logic := kudoLogic;
+        label := anomaEncode resLabel;
+        quantity := n;
+        data := 0;
+        eph := false;
+        npk := commitmentPublicKey;
+        nonce := 0;
+        rseed := 0
+      };
+    resOriginatorSig :=
+      anomaSignDetached
+        (anomaKind res)
+        (KeyPair.privKey kudoOriginatorKeyPair);
+  in res, resOriginatorSig;
+
+--- Create a kudo created ;Resource; for instantiation, owned by the originator.
+instantiateConsume
+  (commitmentPublicKey : PublicKey)
+  (kudoOriginatorKeyPair : KeyPair)
+  (n : Nat)
+  : Resource :=
+  let
+    origPubKey := KeyPair.pubKey kudoOriginatorKeyPair;
+    origKindResourceSig :=
+      instantiateOriginatorKind
+        commitmentPublicKey
+        kudoOriginatorKeyPair
+        n;
+    origKindResource := fst origKindResourceSig;
+    origKindSig := snd origKindResourceSig;
+  in origKindResource@Resource{
+    eph := true;
+    data := anomaEncode
+      mkKudoValue@{
+        owner := mkOwner origPubKey;
+        originatorSig := origKindSig
+      }
+  };
+
+--- Create a kudo ;Resource; for instantiation, owned by the target owner.
+instantiateCreate
+  (commitmentPublicKey : PublicKey)
+  (kudoOwner : Owner)
+  (kudoOriginatorKeyPair : KeyPair)
+  (n : Nat)
+  : Resource :=
+  let
+    origKindResourceSig : Resource × Signature :=
+      instantiateOriginatorKind
+        commitmentPublicKey
+        kudoOriginatorKeyPair
+        n;
+    origKindResource := fst origKindResourceSig;
+    origKindSig := snd origKindResourceSig;
+  in origKindResource@Resource{
+    eph := false;
+    data := anomaEncode
+      mkKudoValue@{
+        owner := kudoOwner;
+        originatorSig := origKindSig
+      }
+  };
+
+instantiateMkSignedTx
+  (commitmentPrivKey : SecretKey)
+  (ownerPrivKey : SecretKey)
+  (consumed : Resource)
+  (created : Resource)
+  : Transaction :=
+  let
+    unsignedTx :=
+      Transaction.mk@{
+        roots := [];
+        commitments := [commitment created];
+        nullifiers := [nullifier consumed commitmentPrivKey];
+        proofs := [consumed; created];
+        delta := [];
+        extra := 0;
+        preference := 0
+      };
+  in signOwner ownerPrivKey unsignedTx;

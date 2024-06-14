@@ -1,0 +1,13 @@
+module Package;
+
+import PackageDescription.V2 open;
+
+package : Package :=
+  defaultPackage
+    {name := "kudos";
+     dependencies := [ defaultStdlib
+                     ; github
+                       "anoma"
+                       "juvix-anoma-stdlib"
+                       "5c72a64d5c9d17ad289c3c72d340a7ef3857bd10"
+                     ]};
