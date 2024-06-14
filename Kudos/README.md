@@ -37,6 +37,8 @@ The value of the `extra` field is a signature generated from the transaction com
 
 Instantiate a quantity of a Kudos kind owned by a specified owner.
 
+See [Example.juvix](Example.juvix) for an example of using this interface. 
+
 ## Logic
 
 ### Instantiate
