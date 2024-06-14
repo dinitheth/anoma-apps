@@ -19,6 +19,8 @@ originatorKeyPair : KeyPair := commitmentKeyPair;
 
 owner : Owner := mkOwner pubKey;
 
---- Instantiate 10 Kudos of originator's kind that are assigned to an owner
+--- After this transaction is verified there is a resource in the commitment
+--- tree that represents 10 Kudos of the originator's kind that are owned by the
+--- specified owner.
 main : Transaction :=
   instantiate commitmentKeyPair owner originatorKeyPair 10;
