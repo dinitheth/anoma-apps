@@ -17,11 +17,7 @@ type KeyPair :=
   };
 
 --- Data stored on a Kudo resource data field
-type KudoValue :=
-  mkKudoValue {
-    owner : Owner;
-    originatorSig : Signature
-  };
+type KudoValue := mkKudoValue {owner : Owner};
 
 --- Data stored on a Kudo resource label field
 type KudoLabel :=
