@@ -9,5 +9,5 @@ package : Package :=
                      ; github
                        "anoma"
                        "juvix-anoma-stdlib"
-                       "5c72a64d5c9d17ad289c3c72d340a7ef3857bd10"
+                       "b91e93a7582a7ac87e7756e39c28affc05926dca"
                      ]};

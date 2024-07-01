@@ -101,8 +101,8 @@ instantiateCreate
   };
 
 instantiateMkSignedTx
-  (commitmentPrivKey : SecretKey)
-  (ownerPrivKey : SecretKey)
+  (commitmentPrivKey : PrivateKey)
+  (ownerPrivKey : PrivateKey)
   (consumed : Resource)
   (created : Resource)
   : Transaction :=

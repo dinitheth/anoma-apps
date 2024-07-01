@@ -6,7 +6,7 @@ import Stdlib.Prelude open;
 
 --- Sign the ;Transaction; nullifiers and commitments with the onwer's secret key
 signOwner
-  (ownerSecretKey : SecretKey)
+  (ownerPrivateKey : PrivateKey)
   (tx : Transaction)
   : Transaction :=
   tx@Transaction{extra := anomaSignDetached
@@ -17,7 +17,7 @@ signOwner
       extra := 0;
       preference := 0
     }
-    ownerSecretKey};
+    ownerPrivateKey};
 
 --- Verify the signature of the ;Transaction; nullifiers and commitments using the owner's public key
 verifyOwner

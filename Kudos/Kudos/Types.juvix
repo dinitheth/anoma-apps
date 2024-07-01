@@ -3,18 +3,8 @@ module Kudos.Types;
 import Anoma open;
 import Stdlib.Prelude open;
 
--- TODO: This should be in Anoma.System
-syntax alias SecretKey := Nat;
-
 --- Data that identifies the owner of the Kudo
 type Owner := mkOwner {ownerPubKey : PublicKey};
-
---- A cryptographic keypair
-type KeyPair :=
-  mkKeyPair {
-    pubKey : PublicKey;
-    privKey : SecretKey
-  };
 
 --- Data stored on a Kudo resource data field
 type KudoValue := mkKudoValue {owner : Owner};
