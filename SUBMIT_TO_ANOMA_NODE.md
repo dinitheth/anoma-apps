@@ -68,7 +68,7 @@ The result is a file called `SimpleCounter.nockma`.
 ## Submitting a Transaction to the Anoma Node
 
 To submit a transaction to the Anoma Node use the `mix client rm-submit` tool.
-This command must be run from the Anoma Node clone directory.
+This command must be run from the Anoma Node root directory.
 
 Pass the path to a `.nockma` file you produced with the `juvix compile anoma` command.
 
