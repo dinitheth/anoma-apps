@@ -3,10 +3,12 @@ module Package;
 import PackageDescription.V2 open;
 
 package : Package :=
-  defaultPackage
-    {name := "kudos";
-     dependencies := [ github "anoma" "juvix-anoma-stdlib" "v0.1.0"
-                     ; github "anoma" "juvix-stdlib" "v0.4.0"
-                     ; github "anoma" "juvix-containers" "v0.12.1"
-                     ; github "anoma" "anoma-app-patterns" "v0.1.2"
-                     ]};
+  defaultPackage@{
+    name := "kudos";
+    dependencies :=
+      [ github "anoma" "juvix-stdlib" "ff351799c068e7b3e23dd903547d228dc30aff5e"
+      ; github "anoma" "juvix-test" "v0.15.0"
+      ; github "anoma" "juvix-arm-transparent" "efb1be6b0448690fb4d0b95a58f88fb1d5c7cc3e"
+      ; github "anoma" "anoma-app-lib" "32ff9d624aa8548f979deaff1340f4dbd4cf7b72"
+      ]
+  };

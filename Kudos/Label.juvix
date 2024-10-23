@@ -1,15 +1,41 @@
 module Label;
 
-import Anoma open;
+import Stdlib.Prelude open;
+import Applib.Helpers open;
 
-import Token.Label open public;
+import Applib.Token.Resource open;
+import Applib.Token.Label open;
+import Applib.Token.Logic open;
 
-mkKudoLabel (originator : PublicKey) : Label :=
-  mkLabel@{
-    name := originator;
-    symbol := "Kudos";
-    decimals := 18
+import Applib.Resource.Error open;
+import Applib.Resource.Traits open;
+
+import Anoma.Identity open;
+import Anoma.Builtin.System open;
+
+mkKudoLabel (originator : ExternalIdentity) : TokenLabel :=
+  mkTokenLabel@{
+    name := "Kudos";
+    symbol := "KDS";
+    decimals := 18;
+    supply := Unbound;
+    transferability := Transferability.Transferable;
+    originator
   };
 
-getOriginator (r : Resource) : PublicKey :=
-  Label.name (anomaDecode (Resource.label r));
+isKudo (originator : ExternalIdentity) (token : Token) : Bool :=
+  let
+    expectedLabel : TokenLabel := mkKudoLabel originator;
+    label : TokenLabel := HasLabel.get token;
+    expectedLogicEncoded : Nat :=
+      tokenLogic (TokenLabel.supply expectedLabel) originator |> anomaEncode;
+    logicEncoded : Nat := HasLogic.get token |> anomaEncode;
+  in if
+    | label /= expectedLabel := false
+    | logicEncoded /= expectedLogicEncoded := false
+    | else := true;
+
+notKudoError : DefaultError :=
+  mkDefaultError@{
+    msg := "The input resource is not a Kudo token."
+  };
