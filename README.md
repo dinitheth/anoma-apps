@@ -1,5 +1,3 @@
-This is the Anoma applications repository. 
+# Anoma Apps 
 
-## Documentation
-
-[How to Submit a Transaction to an Anoma Node](./SUBMIT_TO_ANOMA_NODE.md)
+Intent-centric Anoma applications.
