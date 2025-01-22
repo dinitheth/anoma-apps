@@ -1,0 +1,7 @@
+module Counter.Unique.GetCount;
+
+import Stdlib.Prelude open;
+import Applib open;
+
+main (currentCounterEncoded : Encoded Resource) : Nat :=
+  currentCounterEncoded |> decode |> Resource.value;

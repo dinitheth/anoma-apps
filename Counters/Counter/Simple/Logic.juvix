@@ -1,0 +1,12 @@
+module Counter.Simple.Logic;
+
+import Stdlib.Prelude open;
+import Applib open;
+import Counter.Simple.Resource open;
+
+type LogicWrapper :=
+  mkLogicWrapper@{
+    logic : Logic;
+  };
+
+main : LogicWrapper := mkLogicWrapper valid-counter?;

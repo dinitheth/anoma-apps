@@ -1,7 +1,9 @@
 .juvix-build
+anoma-build/
 .history
 *.nockma
 .DS_Store
 
-
+.nockma
 .vscode
+config.yaml

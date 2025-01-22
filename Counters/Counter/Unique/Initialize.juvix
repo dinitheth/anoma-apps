@@ -1,0 +1,58 @@
+module Counter.Unique.Initialize;
+
+import Stdlib.Prelude open;
+import Applib open;
+import Counter.Unique.Resource open;
+
+initialize
+  {M : Type -> Type}
+  {{Monad M}}
+  {{Tx M}}
+  (consumable : Resource)
+  (logic : Logic)
+  : M Transaction :=
+  do {
+    ephCounterNonce <- genRandomNonce;
+    counterNonce <- genRandomNonce;
+    let
+      uniqueLabel := mkUniqueCounterLabel consumable;
+      ephCounter :=
+        mkCounter@{
+          logic;
+          uniqueLabel;
+          nonce := ephCounterNonce;
+          count := 0;
+          ephemeral := true;
+        };
+      newCounter :=
+        mkCounter@{
+          logic;
+          nonce := counterNonce;
+          ephemeral := false;
+          uniqueLabel;
+          count := 0;
+        };
+      ephConsumable := consumable@Resource{ephemeral := true};
+    in
+    prepareStandardTransaction@{
+      consumed := [consumable; ephCounter];
+      created := [ephConsumable; newCounter];
+    };
+  };
+
+txContext (latestRoot : Nat) : TxContext :=
+  mkTxContext@{
+    caller := Universal.identity;
+    currentRoot := mkRoot latestRoot;
+  };
+
+main
+  (randSeed : Nat)
+  (consumable : Encoded Resource)
+  (logic : Encoded Logic)
+  (latestRoot : Nat)
+  : TransactionRequest :=
+  buildTransactionRequest
+    randSeed
+    (txContext latestRoot)
+    (initialize (decode consumable) (decode logic));

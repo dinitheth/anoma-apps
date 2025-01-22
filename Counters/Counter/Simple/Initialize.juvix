@@ -1,0 +1,43 @@
+module Counter.Simple.Initialize;
+
+import Stdlib.Prelude open;
+import Applib open;
+import Counter.Simple.Resource open;
+
+--- Initializes a counter that can be incremented by everyone.
+--- @param txContext The transaction function standard inputs.
+--- @return The transaction object initializing a counter.
+initialize
+  {M : Type -> Type} {{Monad M}} {{Tx M}} (logic : Logic) : M Transaction :=
+  do {
+    nonce1 <- genRandomNonce;
+    nonce2 <- genRandomNonce;
+    let
+      initialCounter :=
+        mkCounter@{
+          logic;
+          nonce := nonce2;
+          ephemeral := false;
+        };
+    in
+    prepareStandardTransaction@{
+      consumed :=
+        [
+          mkCounter@{
+            logic;
+            nonce := nonce1;
+            ephemeral := true;
+          };
+        ];
+      created := [initialCounter];
+    };
+  };
+
+ctx : TxContext :=
+  mkTxContext@{
+    caller := Universal.identity;
+    currentRoot := mkRoot 0;
+  };
+
+main (logicEncoded : Encoded Logic) : TransactionRequest :=
+  buildTransactionRequest 0 ctx (initialize (decode logicEncoded));

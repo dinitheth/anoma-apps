@@ -1,0 +1,49 @@
+module Counter.Unique.Logic;
+
+import Stdlib.Prelude open;
+import Applib open;
+
+initialize-correct? (self : Resource) (publicInputs : Instance) : Bool :=
+  let
+    quantity := Resource.quantity self;
+    labelNullifier := Resource.label self |> builtinAnomaDecode;
+    nullifiers := Instance.nullifiers publicInputs;
+  in quantity == 1 && isMember labelNullifier nullifiers;
+
+same-kind? : List Resource -> Bool
+  | nil := true
+  | (x :: xs) := all \{y := kind y == kind x} xs;
+
+incremented? : Resource -> Resource -> Bool
+  | consumed created := Resource.value consumed + 1 == Resource.value created;
+
+increment-correct? (self : Resource) (private : Witness) : Bool :=
+  case Witness.consumed private, Witness.created private of
+    | [consumed], [created] :=
+      same-kind? [self; consumed; created] && incremented? consumed created
+    | _, _ := false;
+
+counter-correct? (publicInputs : Instance) (privateInputs : Witness) : Bool :=
+  let
+    tag := Instance.tag publicInputs;
+  in if
+    | isNullifier tag :=
+      case Witness.consumed privateInputs, Witness.created privateInputs of {
+        | [consumable; ephCounter], [ephConsumable; newCounter] :=
+          -- This is called for consumable and ephCounter
+            initialize-correct?
+            ephCounter
+            publicInputs
+        | [prevCounter], [nextCounter] :=
+          increment-correct? prevCounter privateInputs
+        | _ := false
+      }
+    | isCommitment tag := true
+    | else := false;
+
+type LogicWrapper :=
+  mkLogicWrapper@{
+    logic : Logic;
+  };
+
+main : LogicWrapper := mkLogicWrapper counter-correct?;
