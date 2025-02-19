@@ -1,0 +1,68 @@
+module Kudos.Swap;
+
+import Stdlib.Prelude open;
+import Applib open;
+import Anoma.Identity.External open;
+import Anoma.Identity.Internal open;
+import Kudos.Layer open;
+import Kudos.Extra open;
+import Kudos.Create as Create;
+
+txContext (caller : Identity) (latestRoot : Nat) : TxContext :=
+  mkTxContext@{
+    caller;
+    currentRoot := mkRoot latestRoot;
+  };
+
+main
+  (giveRoot : Nat)
+  (rngSeed : Nat)
+  (privateKeyPayload publicKeyPayload : ByteArray)
+  (logic : Logic)
+
+  (giveResource : Resource)
+  (wantSymbol : String)
+  (wantOriginator : ByteArray)
+  (wantQuantity : Nat)
+  : Transaction :=
+  let
+    caller : Identity :=
+      mkIdentityFromPayload privateKeyPayload publicKeyPayload;
+
+    helper {M : Type -> Type} {{Monad M}} {{Tx M}} : M Transaction :=
+      do {
+        nonceCreated <- genRandomNonce;
+        nonceConsumed <- genRandomNonce;
+        let
+          owner := ExternalIdentity.fromByteArray publicKeyPayload;
+          createdResource : Resource :=
+            Create.mkKudos@{
+              nonce := nonceCreated;
+              owner;
+              originator := ExternalIdentity.fromByteArray wantOriginator;
+              quantity := wantQuantity;
+              logic;
+              kudosSymbol := wantSymbol;
+            };
+          created : List Resource := [createdResource];
+          consumed : List Resource := [giveResource];
+        in
+        a <- actionWithAuthorizationAppData@{
+               created;
+               consumed;
+             };
+        root <- TxContext.currentRoot <$> getTxContext;
+        let
+          actions : List Action := [a];
+          delta : Delta := actionsDelta actions;
+        in
+        pure
+          mkTransaction@{
+            roots := [Root.unRoot root];
+            actions;
+            delta;
+            deltaProof : Nat := proveDelta delta;
+          };
+      };
+
+  in runTx rngSeed (txContext caller giveRoot) helper;
