@@ -1,7 +1,7 @@
 # dependencies:
 # 	- jq
 # 	- yq
-# 	- grpcurl
+# 	- curl
 
 # How to run:
 # 0. set ANOMA_PATH environment variable to the folder where anoma is cloned and compiled (branch origin/artem/juvix-node-integration-v0.28)
@@ -74,7 +74,7 @@ anoma-start:
 	rm -f $(config)
 ifdef ANOMA_DEBUG
 	cd $(ANOMA_PATH) && \
-		mix run --no-halt $(root)/../../start-config.exs
+		mix phx.server --no-halt $(root)/../../start-config.exs
 else
 	$(juvix-cmd) dev anoma start --force --anoma-dir $(ANOMA_PATH)
 endif
@@ -109,7 +109,7 @@ compute-kind: $(kind-proved-cued)
 
 .PHONY: add-transaction
 add-transaction: $(proved) $(config)
-	@$(juvix-cmd) dev anoma -c $(config) add-transaction $(proved)
+	$(juvix-cmd) dev anoma -c $(config) add-transaction $(proved)
 
 .PHONY: get-last-message
 get-last-message: $(last-message-txt)
@@ -137,24 +137,24 @@ $(proved): $(nockma) $(config) $(message-file) $(logic-proved)
 	$(juvix-cmd) dev anoma -c $(config) prove $(nockma) -o $(proved) --arg 'bytes:$(logic-proved)' --arg 'bytes-unjammed:$(message-file)'
 
 $(kind-nockma): $(kind-juvix) $(anoma-build)
-	@$(juvix-cmd) compile anoma $(kind-juvix) -o $(kind-nockma)
+	$(juvix-cmd) compile anoma $(kind-juvix) -o $(kind-nockma)
 
 $(kind-proved): $(kind-nockma) $(config) $(logic-proved)
-	@$(juvix-cmd) dev anoma -c $(config) prove $(kind-nockma) -o $(kind-proved) --arg 'bytes:$(logic-proved)'
+	$(juvix-cmd) dev anoma -c $(config) prove $(kind-nockma) -o $(kind-proved) --arg 'bytes:$(logic-proved)'
 
 $(kind-proved-cued): $(kind-proved)
-	@$(juvix-cmd) dev nockma encode --cue --from bytes --to bytes < $(kind-proved) > $(kind-proved-cued)
+	$(juvix-cmd) dev nockma encode --cue --from bytes --to bytes < $(kind-proved) > $(kind-proved-cued)
 
 $(kind-proved-cued-b64): $(kind-proved)
-	@$(juvix-cmd) dev nockma encode --cue --from bytes --to base64 < $(kind-proved) > $(kind-proved-cued-b64)
+	$(juvix-cmd) dev nockma encode --cue --from bytes --to base64 < $(kind-proved) > $(kind-proved-cued-b64)
 
 $(filter-request): $(kind-proved-cued-b64)
 	jq -n --arg KIND $$(cat $(kind-proved-cued-b64)) \
-	'{node_info: {node_id: ""}, filters: [{kind: $$KIND}]}' \
+	'{filters: [{kind: $$KIND}]}' \
 	> $(filter-request)
 
 $(get-message-nockma): $(anoma-build) $(get-message-juvix)
-	@$(juvix-cmd) compile anoma $(get-message-juvix) -o $(get-message-nockma)
+	$(juvix-cmd) compile anoma $(get-message-juvix) -o $(get-message-nockma)
 
 $(logic-nockma): $(anoma-build) $(logic-juvix)
 	$(juvix-cmd) compile anoma $(logic-juvix) -o $(logic-nockma)
@@ -164,9 +164,11 @@ $(logic-proved): $(logic-nockma) $(config)
 
 .PHONY: $(unspent-resources)
 $(unspent-resources): $(anoma-build) $(host) $(port) $(filter-request)
-	@grpcurl -plaintext \
-	-d @ \
-	$$(cat $(host)):$$(cat $(port)) Anoma.Protobuf.BlockService.Filter \
+	curl -X POST \
+	$$(cat $(host)):$$(cat $(port))/indexer/filter-resources \
+	-H "accept: application/json" \
+	-H "Content-Type: application/json" \
+	-d @- \
 	< $(filter-request) \
 	| jq -r 'if has("resources") then .resources[] else empty end' \
 	> $(unspent-resources)

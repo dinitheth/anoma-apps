@@ -45,7 +45,7 @@ anoma-start:
 	rm -f $(config)
 ifdef ANOMA_DEBUG
 	cd $(ANOMA_PATH) && \
-		mix run --no-halt $(root)/../start-config.exs
+		mix phx.server --no-halt $(root)/../start-config.exs
 else
 	$(juvix-cmd) dev anoma start --force --anoma-dir $(ANOMA_PATH)
 endif
@@ -95,7 +95,7 @@ $(get-message-nockma): $(anoma-build) $(get-message-juvix)
 
 .PHONY: $(unspent-resources)
 $(unspent-resources): $(anoma-build) $(host) $(port)
-	grpcurl -plaintext $$(cat $(host)):$$(cat $(port)) Anoma.Protobuf.IndexerService.ListUnspentResources | jq -r '.unspentResources[-1] // error("no messages exist")' > $(unspent-resources)
+	curl -X GET $$(cat $(host)):$$(cat $(port))/indexer/unspent-resources | jq -r '.unspent_resources[-1] // error("no messages exist")' > $(unspent-resources)
 
 $(host): $(config)
 	yq -r '.url' $(config) | tr -d '\n' > $(host)

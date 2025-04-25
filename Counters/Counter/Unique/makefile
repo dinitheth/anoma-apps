@@ -127,7 +127,7 @@ anoma-start:
 	rm -f $(config)
 ifdef ANOMA_DEBUG
 	cd $(ANOMA_PATH) && \
-		mix run --no-halt $(root)/../../../start-config.exs
+		mix phx.server --no-halt $(root)/../../../start-config.exs
 else
 	$(juvix-cmd) dev anoma start --force --anoma-dir $(ANOMA_PATH)
 endif
@@ -162,14 +162,16 @@ $(random-32bytes-increment): $(anoma-build)
 
 $(current-counter-request): $(anoma-build) $(counter-kind-proved-cued-b64)
 	jq -n --arg KIND $$(cat $(counter-kind-proved-cued-b64)) \
-	'{node_info: {node_id: ""}, filters: [{kind: $$KIND}]}' \
+	'{filters: [{kind: $$KIND}]}' \
 	> $(current-counter-request)
 
 .PHONY: $(current-counter)
 $(current-counter): $(anoma-build) $(host) $(port) $(current-counter-request)
-	@grpcurl -plaintext \
-	-d @ \
-	$$(cat $(host)):$$(cat $(port)) Anoma.Protobuf.BlockService.Filter \
+	curl -X POST \
+	$$(cat $(host)):$$(cat $(port))/indexer/filter-resources \
+	-H "accept: application/json" \
+	-H "Content-Type: application/json" \
+	-d @- \
 	< $(current-counter-request) \
 	| jq -r 'try .resources[]' \
 	> $(current-counter)
@@ -200,7 +202,7 @@ get-latest-root: $(get-latest-root)
 
 .PHONY: $(get-latest-root) $(host) $(port)
 $(get-latest-root): $(anoma-build) $(host) $(port)
-	grpcurl -plaintext $$(cat $(host)):$$(cat $(port)) Anoma.Protobuf.BlockService.Root \
+	curl -X GET $$(cat $(host)):$$(cat $(port))/indexer/root \
 	| jq -r '.root' \
 	> $(get-latest-root)
 
