@@ -120,10 +120,6 @@ function atomToWords(atom) {
   return bytesToWords(atomToBytes(atom));
 }
 
-function atomToWords(atom) {
-  return bytesToWords(atomToBytes(atom));
-}
-
 function wordsToAtom(words) {
   return bytesToAtom(wordsToBytes(words));
 }
@@ -139,7 +135,7 @@ function slaq(bloq, len) {
 function chop(met, fum, wid, tou, dst, src) {
   var buf = atomToWords(src),
       len = buf.length,
-      i, j, san, mek, baf, bat, hut, san,
+      i, j, san, mek, baf, bat, hut,
       wuf, wut, waf, raf, wat, rat, hop;
   
   if ( met < 5 ) {
@@ -187,7 +183,7 @@ function cut(a, b, c, d) {
     return zero;
   }
   if ( bi + ci > len ) {
-    ci = len - b;
+    ci = len - bi;
   }
   if ( 0 === bi && ci === len ) {
     return d;
