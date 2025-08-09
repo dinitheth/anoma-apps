@@ -5,7 +5,8 @@ anoma-build/
 .DS_Store
 
 .nockma
-.vscode
 config.yaml
 
 *.log
+config.bat
+node_modules
